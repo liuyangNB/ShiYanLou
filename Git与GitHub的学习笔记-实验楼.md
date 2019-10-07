@@ -142,7 +142,7 @@ text.txt 提交到缓存区后，也就是add之后，想要撤销这次add：
 >
 > //恢复
 >
-> git checkout -- text.txt
+> git checkout -- text.txt//win上我rm后恢复不了？？
 
 
 
