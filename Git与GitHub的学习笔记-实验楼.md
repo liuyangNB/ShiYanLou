@@ -126,19 +126,19 @@ text.txt 提交到缓存区后，也就是add之后，想要撤销这次add：
 
 误提交了某文件 test.txt，想要撤销：
 
-> git rm text.txt
+> git rm text.txt//1删除了一个文件，2同时将删除的文件纳入到stage
 >
 > git commit -m 'delet text.txt'
 >
 > //如果突然又不想删除呢？
 >
-> git  reset HEAD text.txt //恢复为未修改状态
+> git  reset HEAD text.txt //将文件从暂存区恢复到工作区
 >
-> git  checkout -- text.txt //把之前的修改丢弃掉
+> git  checkout -- text.txt //将工作区的**修改**丢弃掉
 
 用系统的指令：
 
-> rm text.txt
+> rm text.txt//将文件删掉了，这时被删除的文件并没纳入暂存区
 >
 > //恢复
 >
