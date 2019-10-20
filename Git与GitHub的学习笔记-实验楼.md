@@ -108,48 +108,6 @@ Git 要求对本地仓库关联的每个远程主机都必须指定一个主机�
 >
 > git config user.name//查看
 
-### 4.6 git checkout
-
-修改了文件text.txt 但是想撤销此次修改：
-
-checkout -- 就是将你之前的修改丢弃掉
-
-> git checkout -- text.txt 这样就真的撤销了，如果没有提交的话
-
-### 4.7 git reset HEAD \<filename>
-
-text.txt 提交到缓存区后，也就是add之后，想要撤销这次add：
-
-> git reset HEAD text.txt
-
-###  4.8 git rm <filename\>
-
-误提交了某文件 test.txt，想要撤销：
-
-> git rm text.txt//1删除了一个文件，2同时将删除的文件纳入到stage
->
-> git commit -m 'delet text.txt'
->
-> //如果突然又不想删除呢？
->
-> git  reset HEAD text.txt //将文件从暂存区恢复到工作区
->
-> git  checkout -- text.txt //将工作区的**修改**丢弃掉
-
-用系统的指令：
-
-> rm text.txt//将文件删掉了，这时被删除的文件并没纳入暂存区
->
-> //恢复
->
-> git checkout -- text.txt//win上我rm后恢复不了？？
-
-
-
-
-
-
-
 
 
 ---
@@ -190,10 +148,6 @@ Git 本地仓库有三大区域：**工作区、暂存区、版本区**。这是
 >
 > git config --gloable user.name'liuyang.nb@outlook.com'
 
-
-
-
-
 ### 5.2 git status 查看状态
 
 > ![1570088052434](Git与GitHub的学习笔记-实验楼.assets/1570088052434.png)
@@ -230,19 +184,69 @@ Git 本地仓库有三大区域：**工作区、暂存区、版本区**。这是
 
 * 还有其他的git diff XXX 自己百度
 
-### 5.5删除文件
+### 5.5git log
 
-* 删除文件
+* git log 
+* git log  -2 //显示最近提交的2个节点
+* git log --pretty=oneline//一行显示的样子
+* git log -p//展开每次提交的内容差异
+* git log --graph
 
-  rm test.c
+### 5.6 git checkout
 
-* 从Git中删除
+修改了文件text.txt 但是想撤销此次修改：
 
-  git rm test.c
+checkout -- 就是将你之前的修改丢弃掉
 
-* 提交操作
+> git checkout -- text.txt 这样就真的撤销了，如果没有提交的话
 
-  git commit -m'提交描述'
+### 5.7 git reset HEAD \<filename>
+
+text.txt 提交到缓存区后，也就是add之后，想要撤销这次add：
+
+将之前添加到暂存区的内容移除到工作区
+
+> git reset HEAD text.txt
+
+### 5.8 git rm <filename\>
+
+误提交了某文件 test.txt，想要撤销：
+
+> git rm text.txt//==**1删除了一个文件，2同时将删除的文件纳入到stage**==
+>
+> git commit -m 'delet text.txt'
+>
+> //如果突然又不想删除呢？
+>
+> git  reset HEAD text.txt //将文件从暂存区恢复到工作区
+>
+> git  checkout -- text.txt //将工作区的**修改**丢弃掉
+
+用系统的指令：
+
+> rm text.txt//将文件删掉了，这时被删除的文件并没纳入暂存区
+>
+> //恢复
+>
+> git checkout -- text.txt// 注意下，要求之前的text.txt是commited
+
+### 5.9 git mv 重命名/剪切
+
+git mv oldname newname//对比于系统的，就是加上了add操作  
+
+> ![1570946510573](Git与GitHub的学习笔记-实验楼.assets/1570946510573.png)
+
+如果是用系统的mv会发生什么？
+
+> ![1570946125338](Git与GitHub的学习笔记-实验楼.assets/1570946125338.png)
+>
+> 删除了老文件，创建了新文件，要自己去add到暂存区
+
+### 5.10git ccommit --amend -m ""
+
+> 上次提交commit -m'这里写错了’；要修改咋么办？
+>
+> 1、修改下文件test.c 加个空格等不影响程序的操作，在commit；这样笨方法，因为还是会有
 
 ## 六、简单实战
 
@@ -649,9 +653,445 @@ get cherry-pick c5 c4 c3 c2
 git branch -f three c2
 ```
 
+## 七 .gitignore与分支
+
+### 7.1背景简述
+
+项目分享的时候，除了正常的xxx.c yyy.h文件等和项目相关的文件是希望和别人协作处理的，但是IDE的相关配置文件，dsw之类什么的，或者jdk放置的目录是不同的，这样别人用这些配置文件可能就会出错，这时候，这些非项目相关的文件就不会拿去上传。
+
+### 7.2规则 作用
+
+/mtk 过滤整个文件夹
+*.zip 过滤所有.zip文件
+/mtk/do.c 过滤某个具体文件
+!/mtk/one.txt 追踪（不过滤）某个具体文件
+
+> 注意：如果你创建.gitignore文件之前就push了某一文件，那么即使你在.gitignore文件中写入过滤该文件的规则，该规则也不会起作用，git仍然会对该文件进行版本管理。
+
+### 7.3配置语法
+
+以斜杠“/”开头表示目录；
+以星号“*”通配多个字符；
+以问号“?”通配单个字符
+以方括号“[]”包含单个字符的匹配列表；
+以叹号“!”表示不忽略(跟踪)匹配到的文件或目录。
+
+> 注意： git 对于 .gitignore配置文件是按行从上到下进行规则匹配的
+
+/TODO #仅忽略项目目录下的TODO文件，不包括subdir/TODO
+
+mydir/*/test.txt #忽略mydir目录下某目录下的test.txt
+
+mydir/**/test.txt #忽略mydir下所有的目录层次的test.txt
+
+build/ #忽略build/目录下的所有文件
+
+## 八、分支
+
+git branch new_branch
+
+git checkout new_brench
+
+git branch -d new_branch//删除分支,不能是当前所处于的分支，会提醒合并情况
+
+git branch -b new_branch//创建新分支，并且切换到这个分支
+
+git branch -v //所处分支最近的一条提交记录
+
+### 8.1 git merge 合并
+
+```shell
+git:(master) git merge new_branch
+```
+
+当前分支是master，然后把new_branch合并到maser上。这个时候再删除new_branch就没问题
+
+一条分支的记录情况：
+
+> ![1571209901503](Git与GitHub的学习笔记-实验楼.assets/1571209901503.png)
+
+### 8.2 HEAD
+
+* HEAD指向的是当前分支
+
+* master指向提交
+
+  > ![1571213037531](Git与GitHub的学习笔记-实验楼.assets/1571213037531.png)
+  >
+  > git branch dev:
+  >
+  > ![1571213386747](Git与GitHub的学习笔记-实验楼.assets/1571213386747.png)
+  >
+  > 在dev分支进行一次提交：
+  >
+  > git commit -m'xxx':
+  >
+  > ![1571213523359](Git与GitHub的学习笔记-实验楼.assets/1571213523359.png)
+  >
+  > 将dev分支内容合并到master上:
+  >
+  > 这种合并称为fast forward（快进）
+  >
+  > ![1571213582238](Git与GitHub的学习笔记-实验楼.assets/1571213582238.png)
+
+### 8.3 冲突
+
+master分支和dev分支都有修改，那么是什么状态呢？
+
+> ![1571223917580](Git与GitHub的学习笔记-实验楼.assets/1571223917580.png)
+>
+> 自动合并 test2.txt
+>
+> 冲突：合并冲突发生在test2.txt
+>
+> 自动合并失败，修复并且提交结果
+>
+> vim打开text2.txt,并修改冲突:
+>
+> ![1571224324669](Git与GitHub的学习笔记-实验楼.assets/1571224324669.png)
+>
+> 然后 git add text2.txt//告诉冲突解决，这里add不是前面的含义
+>
+> ![1571226435444](Git与GitHub的学习笔记-实验楼.assets/1571226435444.png)
+
+### 8.4 分支进阶和版本回退
+
+#### 8.4.1 fast-forward
+
+如果可能，合并分支时Git会使用ff模式；在这种模式下，删除分支会丢掉分支信息
+
+合并时加上 -- no-ff参数会禁用fast-forward，这样会多出一个commit-id
+
+* git merge --no-ff dev
+
+> ![1571228022193](Git与GitHub的学习笔记-实验楼.assets/1571228022193.png)
+
+如果没有禁止ff模式：
+
+> git:(master) git merge dev
+>
+> master分支直接指向了dev的新的提交
+>
+> ![1571228211450](Git与GitHub的学习笔记-实验楼.assets/1571228211450.png)
+
+#### 8.4.2版本回退
+
+* 回退到上一版本
+
+  > git reset -- hard HEAD^
+  >
+  > git reset --hard HEAD~1
+  >
+  > git reset --hard commit_id
+
+* 返回到某一版本
+
+  > git reflog//可以看到历史记录的log
+
+回到之前的版本后，要再回到新版本咋办，因为回到老版本后，老版本之后的版本信息都没了的（git log就看不了）
+
+## 九、checkout进阶与stach
+
+### 9.1 checkout -- <filename>:
+
+> 丢弃当前工作空间的修改，使之与上一次（暂存区）内容保持一致。
+
+git checkout 9e7f3
+
+> 切换到commit_id的节点，HEAD是游离状态
+>
+> ![1571293479250](Git与GitHub的学习笔记-实验楼.assets/1571293479250.png)
+>
+> 虽然切换到了2节点，但是不能在这个节点修改完后再切换到master（4）；你以位是在2修改下，然后切换到4，就保留了新修改的信息，同时3，4 的信息也保留？然而并不是！
+
+咋么办？
+
+> git add .
+>
+> git commit -m '中途修改了2'
+>
+> git checkout master
+>
+> git branch mycommit 5//5这个提交当成一个分支 mycommit
+
+### 9.2 git stach
+
+开发中，你正在开发，但是还没开发完，这时候来了个需求让你在版本2中去开发其他东西，但是这时候的东西由于是还没验证的，不太好commit之后再切换到版本2去开发，这时候就要用到stach
+
+git stach list
+
+git stach pop//恢复同时也将stash内容删除
+
+git stach apply//将之前保存的状态恢复过来，但是不删除保存的那个状态
+
+> 通过 git stach drop stash@{0}手动删除
+
+## 十、标签与diff
+
+### 10.1 tag
+
+> git tag v1.0.1	轻量级标签
+>
+> git tag -a v1.0.2 -m'xxx'	创建一个带有附注的标签
+>
+> git tag -d tag_name	删除标签
+
+> git tag	//查看标签
+>
+> git tag -l 'v1.0'	查找
+>
+> git tag -l 'v*'	通配查找
+
+### 10.2 diff
+
+#### git blame
+
+> 显示上一次对文件的修改情况，是谁，改了什么
+
+#### 系统 diff:
+
+> 先创建a.md b.md 
+>
+> a.md:
+>
+> > hello world
+> >
+> > hello java
+> >
+> > hello switch
+>
+> b.md:
+>
+> > hello world
+> >
+> > hello clojure
+> >
+> > hello python
+>
+> $ diff -u a.md b.md:
+>
+> -指源文件	+指目标文件
+>
+> ```shell
+> --- a.md        2019-10-20 11:38:16.155673300 +0800
+> +++ b.md        2019-10-20 11:39:25.839049300 +0800
+> @@ -1,5 +1,5 @@	//-1行开始，5行
+> -hello world
+> -
+> -hello java
+> -
+> -hello switch
+> \ No newline at end of file
+> +hello world
+> +
+> +hello clojure
+> +
+> +hello python
+> \ No newline at end of file
+> 
+> ```
+
+#### git diff
+
+##### 1\git diff 工作区&暂存区
+
+修改了某文件之后，先不add，先git diff一下：
+
+```shell
+$ git diff a.txt
+diff --git a/a.txt b/a.txt
+index 831c80f..a44716d 100644
+--- a/a.txt	#原始文件---	工作区
++++ b/a.txt	#修改后文件+++	暂存区
+@@ -1,3 +1,4 @@
+ hello world
+ hello java
+-hello switch
+\ No newline at end of file
++hello switch
++add a new line but not add
+```
+
+##### 2\git diff commit_id 工作区&版本区
+
+git diff HEAD <fielname>
+
+> 比较工作区和最新提交的差别
+
+##### 3\git diff --cached 暂存区&版本区
+
+git diff --cached commit_id filename
+
+> 比较暂存区和版本去之间的差别
+
+## 十一、远程与GItHub
+
+pull == fetch + merge 
 
 
 
 
 
 
+
+
+
+
+
+
+
+## 附录：女神的烦恼
+
+**女神：哎呀，刚刚有个地方搞错了，怎么重新来过呢？**
+
+女神莫慌，Git 的牛逼之处，在于它自带时光机效果，能让你在项目的历史代码中任意穿梭。
+
+如果项目的某一处地方它自己不小心坏掉了，不妨试下下面的这行命令：
+
+```text
+$ git reflog
+```
+
+这条命令能列出你在 Git 上的所有操作记录，你只要找到 HEAD@{index} 前面所对应的操作索引，并使用下面命令即可：
+
+```text
+$ git reset HEAD@{index}
+```
+
+> 注：使用时需将HEAD@{index}替换为对应索引。
+
+
+
+**女神：想改个小东西，但代码不小心提交（commit）了，这可咋整？**
+
+这个简单，首先，添加下当前已改动的代码：
+
+```text
+$ git add .
+```
+
+然后，运行下面这条命令，它就会把你刚刚添加的代码合并到最后一次提交上了：
+
+```text
+$ git commit --amend
+```
+
+
+
+**女神：哼！刚刚写的提交历史写得不够好，我想重写一下！**
+
+好的，还是上面提到过的那条代码，运行一下，就可以重写提交历史啦：
+
+```text
+$ git commit --amend
+```
+
+
+
+**女神：这下惨了，我刚刚不小心把新分支的代码提交到主分支上了！**
+
+女神别着急，我们一步步来，你先创建个新分支（some-new-branch-name）：
+
+```text
+$ git branch some-new-branch-name
+```
+
+然后把刚才的提交从主分支中移除：
+
+```text
+$ git reset HEAD~ --hard
+```
+
+需要注意的是，上面的代码只会切换到最后一条提交记录上，如果你已跑到其它提交记录上怎么办？没关系，你可以用 git reset HEAD@{number} 再跑回来。
+
+等你跑回来之后，我们再切换到新分支上：
+
+```text
+$ git checkout some-new-branch-name
+```
+
+好了，完成啦，现在主分支干干净净，刚刚不小心提交的代码也被移到新分支上了。
+
+需要注意的是，上面的代码只对本地仓库有效，如果你已经把代码提交到远程仓库上，那就得跟队友商量下解决方案了。
+
+啥？我就是你队友？这可真让我受宠若惊☺️ 不过没事，等下我帮你在线上主分支上 reset 然后 push -f 一下就好啦~
+
+
+
+**女神：完蛋了，我把代码提交到错误的分支上了！**
+
+别怕别怕，有我在呢。
+
+我们先撤销最后一次提交，但保留变更代码：
+
+```text
+$ git reset HEAD~ --soft
+$ git stash
+```
+
+再切到你想要提交的正确分支（name-of-the-correct-branch）上，并把变更代码提交上去：
+
+```text
+$ git checkout name-of-the-correct-branch
+$ git stash pop
+$ git add .
+$ git commit -m "your message here"
+```
+
+OK，到这里就搞定了。
+
+如果想要逼格高点，也可以用 cherry-pick 这个命令来完成上面那些操作。具体的操作步骤如下。
+
+首先，切换到正确的分支上：
+
+```text
+$ git checkout name-of-the-correct-branch
+```
+
+然后使用 cherry-pick 来获取最新一条提交记录：
+
+```text
+$ git cherry-pick master
+```
+
+最后再把主分支上那条提交错误的记录删除：
+
+```text
+$ git checkout master
+$ git reset HEAD~ —-hard
+```
+
+
+
+**女神：咦？为啥我运行 diff 后啥都没有？**
+
+遇到这种情况，应该是文件没有加入到暂存区的缘故。解决方案很简单，咱们要么把文件加入到暂存区，要么就直接使用下面这条命令：
+
+```text
+$ git diff --staged
+```
+
+这样，就可以看到未存入暂存区文件的 diff 效果啦。
+
+
+
+**女神：这项目怎么这么乱！好烦呐！我不玩了！**
+
+别气别气，别气坏了身子就不好了，么么哒  
+
+如果本地代码仓库把自己折腾得乱七八糟，不用怕，用下面这招，一击必杀：
+
+```text
+$ cd ..
+$ sudo rm -r fucking-git-repo-dir
+$ git clone https://some.github.url/fucking-git-repo-dir.git
+$ cd fucking-git-repo-dir
+```
+
+是的，这就是备胎（线上仓库）的强大之处，只要你备胎尚在，你就可以大大方方的把本地仓库删了，clone 备胎，从头再来。
+
+
+
+**女神：好啦，我没什么问题了，谢谢你哦~**
+
+不不不，这块问题还多着呢？你打开下面这个网站，听我跟你细细道来…
