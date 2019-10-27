@@ -928,6 +928,259 @@ git diff --cached commit_id filename
 
 pull == fetch + merge 
 
+在GitHub上新建一个仓库后得到该仓库的底座：url_github
+
+在本地git_bash指令输入：
+
+> git remote add origin url_github	//本地将用origin代表那个url
+
+> git push -u origin master	//-u 表示关联，本地master与远程master关联
+
+> 之后会让你输入GitHub的注册名和密码
+
+## 十二、Git远程操作
+
+git remote show	//显示远程仓库，可以有多个远程仓库（显示别名）
+
+* Gitflow
+
+* 基于Git分支的开发模型（一家之言）
+
+  > develop分支（频繁变化的一个分支）
+  >
+  > test分支（供测试与产品等人员使用，变化不频繁）
+  >
+  > master分支（生产发布分支，变化非常不频繁）
+  >
+  > bugfix （生产系统出现紧急bug，用于紧急修复的分支）
+
+远端的网站：https、SSH；对于一般http的是不加密，每次都要输入用户名和密码，比较烦，比较推荐SSH
+
+**需要找到自己主机的公钥传到GitHub上**
+
+公钥私钥可能要再查其他资料去了解
+
+## 十三、Git协作
+
+ 其他人修改了push到远端后，自己如果想把修改的push过去是不行的，要先pull过来，再push。
+
+pull过来可能失败，也就是有冲突，要自己解决。
+
+master\==\==origin/master\=\== remote 
+
+**冲突：**
+
+> 有突出后 一方用vim或者其他编辑器处理，看看删除什么留下什么，再调用add（add第三个作用是 标识冲突以及解决掉了）
+>
+> 再git commit
+
+这部分其实还是要从书本上进行深入的学习会比较好吧
+
+## 十四、Git远程分支、别名
+
+​	【gitk与git gui】
+
+图形界面 本身的 或者 第三方的
+
+> gitk
+
+> git gui
+
+
+
+别名：
+
+git config --gloable alias.br branch	//alias.别名	
+
+> st	status
+>
+> co checkout
+
+git config --gloable alias.unstage reset HEAD	//一个操作
+
+git config --gloable alias.ui '!gitk'	//外部命令
+
+---
+
+### 14.1 本地分支和远程分支同步
+
+远端只有master分支，而本地有master和develop分支，如果本地在develop分支上向远端推送，就会报错。
+
+将本地的新分支推往远端 test=>origin/test;并且在远端新建对于的分支
+
+> git push -u origin test
+
+> git push --set -upstream origin develop	//将本地develop分支推送远端且在远端创建develop分支（同上 test）
+
+其他人协作时候，将李四创建的develop分支pull到本地？
+
+> git pull //	会把远端的所有分支拉取，本地会有新的远程分支，但是没有本地的develop分支（有origin/develop;没有develop分支）
+>
+> ```shell
+> git：（master）git checkout -b develop
+> #这里的develop分支是基于master分支创建的；但是我想基于origin/develop分支创建，咋么办？
+> ```
+>
+> ```shell
+> git：（master）git checkout -b develop origin/develop
+> #这里就是基于origin/develop分支，且与之对应
+> 
+> git：（master）git checkout --track origin/develop
+> #同上（上面的特例，这里没有重新起名字，默认和远程同名）
+> ```
+
+### 14.2 远程分支删除
+
+本地有的分支：
+
+```shell
+git branch -av
+develop
+master
+test
+remote/origin/develop
+remote/origin/master
+remote/origin/test
+```
+
+删除本地分支：
+
+> git branch -d develop	//将本地的develop删除，remote/develop还在
+>
+> git checkout --track origin/develop	//又创建了
+
+删除远程分支：
+
+> git push origin :develop	//将一个空分支推送到远程的develop也就是删除
+>
+> git push origin --delete develop//新版本的更直观的方法
+
+重命名远程分支：
+
+> 先删除远程分支，再重新推送
+>
+> git push origin --delete develop2//先删除远程的develop2
+>
+> git push --set-upstream origin develop//将本地的develop推上去
+
+说明：如果同名之间push还好说，但是如果不同名要注意了：
+
+> git push origin develop:develop2//将本地的develop推到远端的develop2
+
+## 十五 Git refspec
+
+本地远程分支（远程分支）origin/xxxxx
+
+push的完整操作命令：
+
+> git push origin srcBranch:destBranch//本地：Github
+
+pull的完整操作命令：
+
+> git pull origin srcBranch:destBranch//Github：本地
+
+HEAD标记：
+
+> HEAD文件是一个指向当前所在**分支**的引用标识符，改文件并不包含一个SHA-1值（commit_id)，而是一个指向另外一个引用的指针。
+
+当我们执行git commit命令时，git会创建一个commit对象，并且将这个commit对象的parent指针设置为HEAD所指向引用的SHA-1值。我们对HEAD的所有操作都会被git reflog记录。
+
+### 15.1 远程标签
+
+git tag基础看前面
+
+git push origin tag_name//推送标签
+
+git push origin --tags//将本地还没推送到远端的标签全部推送过去
+
+其他人如何获取标签？
+
+git pull 即可
+
+删除一个远程标签：将空的本地标签堆到远端
+
+git push origin :refs/tags/v6.0	//但是其他pull还是有v6.0
+
+git push origin --delete tag v5.0
+
+## 十六、git远程分支的底层分析
+
+查看远端分支的历史记录：
+
+> git log	//当前分支的log
+>
+> git log origin/master
+>
+> git log remotes/origin/master
+>
+> git log refs/remotes/origin/master
+
+把远端的master分支拉取到本地且对应mymaster：
+
+> git fetch origin master:refs/remotes/origin/mymaster
+>
+> 本地可能没有对应分支对应，需要一个对应的本地分支
+>
+> git checkout --track origin/mymaster
+
+## 十七 git gc 垃圾收集
+
+用的很少，了解
+
+> git gc
+
+   把一些东西打包到packed-refs
+
+----
+
+---
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
