@@ -192,7 +192,7 @@ Git 本地仓库有三大区域：**工作区、暂存区、版本区**。这是
 * git log -p//展开每次提交的内容差异
 * git log --graph
 
-### 5.6 git checkout
+### 5.6 git checkout --
 
 修改了文件text.txt 但是想撤销此次修改：
 
@@ -916,13 +916,15 @@ index 831c80f..a44716d 100644
 
 git diff HEAD <fielname>
 
-> 比较工作区和最新提交的差别
+> 比较工作区和最新提交(版本区)的差别
 
 ##### 3\git diff --cached 暂存区&版本区
 
 git diff --cached commit_id filename
 
 > 比较暂存区和版本去之间的差别
+
+git diff 是只比较比较工作区和暂存区（最后一次add）的区别，git diff --cached 是只比较暂存区和版本库的区别，git diff HEAD -- filename 是只比较工作区和版本库（最后一次commit）的区别。三种比较各对应不同命令的
 
 ## 十一、远程与GItHub
 
@@ -1137,6 +1139,246 @@ git push origin --delete tag v5.0
 
 ---
 
+## 十八、Git裸库与submodule（多模块）
+
+要调用其他项目的Git项目？？？
+
+模拟过程，在GitHub上建立两个项目。（注意SSH-Key的账户添加法)
+
+一个parent项目，一个child项目
+
+在parent项目里面：
+
+> git submodule add url_child	dir/dir是在parent项目中用来放置child项目的文件夹，这个目录要是一个新的目录
+>
+> 会多出dir文件，和.gitmodule文件夹
+>
+> 再git add . &git commit -m'add module'
+
+child项目如果发送变化更新，如何在parent更新？
+
+> cd dir	//进入mymodule文件夹
+>
+> git pull
+>
+> 项目如果依赖多个submodle难道要进入多个submodle拉取？
+
+> git submodule foreach git pull	//所有的submodule进行拉取
+
+---
+
+如果其他项目组成员要clone你的项目咋办呢，直接clone默认是不会把submodule文件夹克隆下来（会克隆.gitmodule)
+
+> 1. submodule初始化
+>
+>    git submodule init
+>
+> 2. 递归更新submodule
+>
+>    git submodule update --recursive
+
+> 新的方法：
+>
+> git clone url_被克隆的地址 yourdirname --recursive//加这个参数会克隆子模块
+
+---
+
+如果引入的submodule没用了，如何删除？（没有直接的命令）
+
+> 1 将submodule从缓存区删除
+>
+> > git rm --cached mymodule
+>
+> 2 将submodule实体文件从工作区删除
+>
+> > rm -rf mymodule 
+> >
+> > git add . & git commit -m'remove submodule'
+> >
+> > git push
+>
+> 3 将.gitmodule目录删除
+>
+> > rm .gitmodules
+> >
+> > git add . & git commit -m'xxx'
+> >
+> > git push
+
+## 十九、Git subtree（官方推荐）
+
+面对的目标问题同submodule；但是submodule还是有风险的。有时候主工程里有时候需要修改被依赖工程的代码，还要给推过去，变成双向的了。
+
+首先要有两个工程：git sub tree parent; 	git subtree child
+
+* git remote add subtree-origin url_subtree//添加远程的分支
+
+* git subtree add --prefix=subtree subtree-origin master --squash//将远程被依赖的库(subtree-origin的master分支)放在subtree目录下,--squash可选，把远程的提交合并拉取过来。
+
+  > 现在你的本地master分支会比origin/master领先，需要快进一下
+
+* git push
+
+这时候在child项目添加文件test.txt;然后再parent项目中拉取：
+
+* git subtree pull --prefix=subtree subtree-origin master --squash//这样就把child项目的更新拉取过来，并且由于squash存在，提交记录变成操作者了。
+* git push//更新远端（这个只是push到parent项目的远端地址）
+
+---
+
+在parent项目里面修改child项目的文件
+
+* git subtree push --prefix=subtree subtree-origin master
+
+  > 如果被拒绝，可能是当前分支要比远程分支落后，需要先pull？？？视频中这里出错，然后一直找不出原因，就搁置到下一期视频讲解
+
+---
+
+遇到问题，就从头开始复盘：
+
+还是初始化两个项目：parents	child
+
+在本地的parents终端：
+
+* git remote add subtree-origin url_subtree//添加远程的分支
+
+* git subtree add -P subtree subtree-origin master
+
+  > (出错的情况）git subtree add --prefix=subtree subtree-origin master -**-squash**//将远程被依赖的库(subtree-origin的master分支)放在subtree目录下,--squash可选，把远程的提交合并拉取过来。
+
+  > ********************************
+  >
+  > --squash 会把subtree的多个提交合并成一个提交，这个合并的提交会把原来的commit message合并成一条：
+  >
+  > 'a' 'b' 'c' ==>'abc'	对于subtree仓库来说是看不到前面三个，只会看到组合后的新的commit_id; 之后的pull还会有新的提交，就是组合的新的commit_id和parents工程合并merge
+  >
+  > 常规的三分合并：
+  >
+  > ![1572316579223](Git与GitHub的学习笔记-实验楼.assets/1572316579223.png)
+  >
+  > 然而如果使用--squash：
+  >
+  > 找不到共同的祖先了。就报错了//可以push到child新建一个分支，再merge到child的master上。但是这样做显得麻烦。//那么是不是不要用--squash？这样就不会有找不到沟通祖先的报错情况，但是这样外层的提交历史（child的）会污染了内层的提交历史（parents的）
+  >
+  > ---
+  >
+  > 所以，如果第一条命令（subtree-pull)没有使用--squash，那么之后就要保证都不要使用这个参数；如果一开始使用了，后续所有的都要使用。
+  >
+  > ---
+  >
+  > parent里修改后push到child；然后child中pull后再修改，再push；然后parents中再pull；这样出错了，冲突？？？？？
+
+---
+
+Git subtree 深度原理刨析：
+
+从上一节的遗留问题说起，使用squash把subtree-child中拉下来的分支给合并掉了，pull上去合并过程也找不到公共祖先。
+
+----
+
+Git subtree split:
+
+开发好久后，发现某个模块可以单独拿出来当作项目；有两种方法来实现：
+
+* 单独把模块拷贝出来
+
+  > 会丢失提交历史信息
+
+* 利用git subtree split分割 
+
+---
+
+为什么使用和不使用--squash都可能merge时候出错。
+
+问题复述：
+
+> 在child中修改了一个文件，然后将这个文件推送到了远程；再然后再parent中使用了git subtree pull命令，将git subtree中的提交拉取到本地；拉取的时候parents并没有对child中的文件修改过的，本来拉取过来应该是没问题的，但是实际上就是会出现冲突；
+>
+> ![1572358543999](Git与GitHub的学习笔记-实验楼.assets/1572358543999.png)
+>
+> 分支走下去会发现起始就不是同源
+
+## 二十、Git cherry-pick
+
+说明：将某一个分支的修改运用到另外一个分支上。主要是应用在本地分支上。
+
+加上在develop分支上做了一个模块开发，有两个提交commit_id_1,commit_id_2.现在想把这两个提交移到master分支：
+
+> git checkout master//切换到master分支
+>
+> git cherry-pick commit_id_1//把commit_id_1应用到master，且生产新的id
+>
+> git cherry-pick commit_id_2
+>
+> (develop分支的原有的id_1 id_2还在)
+>
+> ---
+>
+> 如果先处理id_2 可能就会出现冲突，出现冲突就和merge的冲突一样取解决就好了
+>
+> ---
+>
+> 然后想把develop分支恢复，可以:
+>
+> > git checkout 合适的提交掉commit_id_0
+> >
+> > //这时候可以删除develop分支（如果有的话）									git branch -d develop//-D
+> >
+> > 删除后应该是处于游离状态：
+> >
+> > ![1572361225253](Git与GitHub的学习笔记-实验楼.assets/1572361225253.png)
+> >
+> > 这时候在这个节点创建分支：
+> >
+> > git checkout -b develop(不是之前那个)
+> >
+
+## 二十一、Git rebase
+
+变基、衍合；rebase的功能类似于merge；为什么出个这个指令？工作方式有显著差异。
+
+回顾merge：
+
+> ![1572533270695](Git与GitHub的学习笔记-实验楼.assets/1572533270695.png)
+>
+> ![1572533284376](Git与GitHub的学习笔记-实验楼.assets/1572533284376.png)
+>
+> ![1572533343953](Git与GitHub的学习笔记-实验楼.assets/1572533343953.png)
+
+关于rebase：
+
+> ![1572533284376](Git与GitHub的学习笔记-实验楼.assets/1572533284376.png)
+>
+> 所处mywork分支，以origin为点变基，如5冲突就处理，完事再6；都没冲突就ok。
+>
+> ![1572533424703](Git与GitHub的学习笔记-实验楼.assets/1572533424703.png)
+>
+> 
+>
+> ![1572533488771](Git与GitHub的学习笔记-实验楼.assets/1572533488771.png)
+>
+> 把一个分支上的修改应用到另外一个分支上，且会修改提交历史。
+>
+> 注意事项：
+>
+> * rebase过程也会出现冲突
+> * 解决冲突后，使用git add 添加，然后执行
+>   * git rebase --continue
+> * 接下来Git会继续应用余下的补丁
+> * 任何时候可以git rebase -- abort中止
+>
+> rebase最佳实践（因为会修改提交历史）：
+>
+> * **不要对master分支执行rebase，否则会引起很多问题**
+> * **一般，执行rebase的分支都是自己的本地分支，没有推送到远程**！
+
+---
+
+Git rebase 实战：
+
+
+
+  
 
 
 
@@ -1156,32 +1398,7 @@ git push origin --delete tag v5.0
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+ 
 
 
 
